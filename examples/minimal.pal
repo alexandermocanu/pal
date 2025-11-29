@@ -5,7 +5,7 @@ fn caller() -> u32 {
     return 1;
 };
 
-fn main(a: u32) -> u32 {
+fn main() -> u32 {
     caller();
     printf("Hi");
     caller();
