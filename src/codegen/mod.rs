@@ -11,6 +11,7 @@ use inkwell::{
 
 use crate::{codegen::error::CodegenError, spec::ast::*};
 
+/// Generates an LLVM Basic Type from a given AST type node.
 pub fn generate_codegen_type<'ctx>(
     context: &'ctx Context,
     typ: &Type,
@@ -27,6 +28,7 @@ pub fn generate_codegen_type<'ctx>(
     }
 }
 
+/// Generates an LLVM Basic Value from a given AST expression node.
 pub fn generate_codegen_expression<'ctx>(
     context: &'ctx Context,
     builder: &'ctx Builder,
@@ -43,6 +45,8 @@ pub fn generate_codegen_expression<'ctx>(
     }
 }
 
+/// Generates LLVM Instruction Values via the [`Builder`] depending on the type of statement
+/// parsed.
 pub fn generate_codegen_statement(
     context: &Context,
     module: &CodegenModule,
@@ -76,6 +80,9 @@ pub fn generate_codegen_statement(
     Ok(())
 }
 
+/// Generates LLVM top-level items like functions and blocks.
+/// This means language features like function declarations, their implementations and extern
+/// definitions.
 pub fn generate_codegen_item<'a>(
     context: &'a Context,
     module: &CodegenModule<'a>,
@@ -119,6 +126,7 @@ pub fn generate_codegen_item<'a>(
     Ok(())
 }
 
+/// Generates an LLVM Module from an AST module node.
 pub fn generate_codegen_module<'a>(
     context: &'a Context,
     module: &Module,
