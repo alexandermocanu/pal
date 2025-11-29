@@ -9,12 +9,16 @@ use crate::spec::ast::*;
 
 pub fn generate_codegen_expression<'ctx>(
     context: &'ctx Context,
+    builder: &'ctx Builder,
     expression: &Expression,
 ) -> anyhow::Result<BasicValueEnum<'ctx>> {
     match expression {
         Expression::NumericLiteral(value) => Ok(context
             .i32_type()
             .const_int(*value, false)
+            .as_basic_value_enum()),
+        Expression::StringLiteral(value) => Ok(builder
+            .build_global_string_ptr(&value, "")?
             .as_basic_value_enum()),
     }
 }
@@ -26,7 +30,9 @@ pub fn generate_codegen_statement(
 ) -> anyhow::Result<()> {
     match statement {
         Statement::Return(expression) => {
-            builder.build_return(Some(&generate_codegen_expression(context, expression)?))?;
+            builder.build_return(Some(&generate_codegen_expression(
+                context, builder, expression,
+            )?))?;
         }
     }
 

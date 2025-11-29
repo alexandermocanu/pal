@@ -85,24 +85,30 @@ pub fn identifier() -> Parser<String> {
 }
 
 /// Generates a parser that matches on one exact given string-like item. This can be used to parse
-/// for specific keywords like `if`, `while` and similar. Does not ignore whitespace.
-pub fn string(input: impl ToString) -> Parser<String> {
-    let input = input.to_string();
-    let mut chars = input.chars();
-
-    if let Some(next) = chars.next() {
-        return char(next)
-            .chain(string(chars.as_str()))
-            .map(|(x, xs)| once(x).chain(xs.chars()).collect());
-    }
-
-    Parser::pure("".to_string())
-}
-
-/// Generates a parser that matches on one exact given string-like item. This can be used to parse
 /// for specific keywords like `if`, `while` and similar. Ignores whitespace.
 pub fn symbol(input: impl ToString) -> Parser<String> {
-    strip(string(input))
+    /// Generates a parser that matches on one exact given string-like item. This can be used to parse
+    /// for specific keywords like `if`, `while` and similar. Does not ignore whitespace.
+    pub fn symbol_prime(input: impl ToString) -> Parser<String> {
+        let input = input.to_string();
+        let mut chars = input.chars();
+
+        if let Some(next) = chars.next() {
+            return char(next)
+                .chain(symbol_prime(chars.as_str()))
+                .map(|(x, xs)| once(x).chain(xs.chars()).collect());
+        }
+
+        Parser::pure("".to_string())
+    }
+
+    strip(symbol_prime(input))
+}
+
+impl Parser<Vec<char>> {
+    pub fn qualify(self) -> Parser<String> {
+        self.map(|str| str.into_iter().collect())
+    }
 }
 
 #[test]

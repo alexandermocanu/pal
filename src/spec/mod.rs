@@ -3,14 +3,23 @@ pub mod ast;
 use crate::parser::*;
 use ast::*;
 
+pub fn str_literal() -> Parser<Expression> {
+    between(
+        symbol("\""),
+        alphanum().many().qualify().map(Expression::StringLiteral),
+        symbol("\""),
+    )
+}
+
 pub fn num_literal() -> Parser<Expression> {
     digit()
         .many()
-        .map(|s| Expression::NumericLiteral(s.iter().collect::<String>().parse::<u64>().unwrap()))
+        .qualify()
+        .map(|str| Expression::NumericLiteral(str.parse::<u64>().unwrap()))
 }
 
 pub fn expression() -> Parser<Expression> {
-    num_literal()
+    str_literal().or(num_literal())
 }
 
 pub fn r#return() -> Parser<Statement> {

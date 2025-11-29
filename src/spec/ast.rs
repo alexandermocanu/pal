@@ -2,6 +2,7 @@
 /// the AST.
 #[derive(Clone, Debug)]
 pub enum Expression {
+    StringLiteral(String),
     NumericLiteral(u64),
 }
 

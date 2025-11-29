@@ -1,3 +1,3 @@
 fn main() -> u32 {
-    return 69;
+    return 123;
 }
