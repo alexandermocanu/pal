@@ -16,6 +16,7 @@ pub enum Expression {
 /// Describes any possible statement.
 #[derive(Clone, Debug)]
 pub enum Statement {
+    FunctionCall(String, Vec<Expression>),
     Return(Expression),
 }
 

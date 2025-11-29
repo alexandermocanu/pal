@@ -1,3 +1,5 @@
+pub mod error;
+
 use inkwell::{
     AddressSpace,
     builder::Builder,
@@ -6,15 +8,8 @@ use inkwell::{
     types::{BasicType, BasicTypeEnum},
     values::{BasicValue, BasicValueEnum},
 };
-use thiserror::Error;
 
-use crate::spec::ast::*;
-
-#[derive(Error, Debug)]
-pub enum CodegenError {
-    #[error("tried to reference a type that does not exist.")]
-    TypeDoesNotExist,
-}
+use crate::{codegen::error::CodegenError, spec::ast::*};
 
 pub fn generate_codegen_type<'ctx>(
     context: &'ctx Context,
@@ -50,10 +45,27 @@ pub fn generate_codegen_expression<'ctx>(
 
 pub fn generate_codegen_statement(
     context: &Context,
+    module: &CodegenModule,
     statement: &Statement,
     builder: &Builder,
 ) -> anyhow::Result<()> {
     match statement {
+        Statement::FunctionCall(name, expression) => {
+            let fn_reference = module
+                .get_function(&name)
+                .ok_or(CodegenError::FunctionDoesNotExist)?;
+
+            let exprs: Vec<_> = expression
+                .iter()
+                .map(|expression| {
+                    generate_codegen_expression(context, builder, expression)
+                        .unwrap()
+                        .into()
+                })
+                .collect();
+
+            builder.build_call(fn_reference, &exprs, "")?;
+        }
         Statement::Return(expression) => {
             builder.build_return(Some(&generate_codegen_expression(
                 context, builder, expression,
@@ -99,7 +111,7 @@ pub fn generate_codegen_item<'a>(
             builder.position_at_end(fn_block);
 
             for statement in body {
-                generate_codegen_statement(context, statement, &builder)?;
+                generate_codegen_statement(context, module, statement, &builder)?;
             }
         }
     }

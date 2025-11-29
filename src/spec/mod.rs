@@ -24,14 +24,37 @@ pub fn str_literal() -> Parser<Expression> {
 }
 
 pub fn num_literal() -> Parser<Expression> {
-    digit()
-        .many()
-        .qualify()
-        .map(|str| Expression::NumericLiteral(str.parse::<u64>().unwrap()))
+    // TODO: make this parser use an "and_then"/flatmap
+    Parser::new(move |input| {
+        match digit()
+            .many()
+            .qualify()
+            .map(|str| str.parse::<u64>())
+            .parse(input)
+        {
+            Ok((Ok(num), remaining)) => Ok((num, remaining)),
+            _ => Err(error::ParseError::Unit),
+        }
+    })
+    .map(Expression::NumericLiteral)
 }
 
 pub fn expression() -> Parser<Expression> {
     str_literal().or(num_literal())
+}
+
+pub fn function_call() -> Parser<Statement> {
+    identifier()
+        .chain(between(
+            symbol("("),
+            expression()
+                .maybe()
+                .chain(symbol(",").right(expression()).many()),
+            symbol(")"),
+        ))
+        .map(|(name, (head, rest))| {
+            Statement::FunctionCall(name, head.into_iter().chain(rest.into_iter()).collect())
+        })
 }
 
 pub fn ret() -> Parser<Statement> {
@@ -39,7 +62,7 @@ pub fn ret() -> Parser<Statement> {
 }
 
 pub fn statement() -> Parser<Statement> {
-    ret().left(symbol(";"))
+    function_call().or(ret()).left(symbol(";"))
 }
 
 pub fn argument_parser() -> Parser<Vec<(String, Type)>> {
