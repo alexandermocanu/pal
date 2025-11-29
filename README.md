@@ -1,3 +1,3 @@
 # PAL
 
-Pal is a rudimentary toy programming language developed in the pursuit of Recreational Programming:tm:.
+`pal` (perhaps a language) is a rudimentary toy programming language developed in the pursuit of Recreational Programming:tm:.
