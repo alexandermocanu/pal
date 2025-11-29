@@ -1,6 +1,7 @@
 pub mod error;
 pub mod generators;
 
+pub use generators::*;
 use std::{iter::once, sync::Arc};
 
 use error::ParseError;

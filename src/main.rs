@@ -3,6 +3,8 @@ pub mod spec;
 
 use clap::Parser;
 
+use crate::spec::module;
+
 /// A list of arguments that can be passed to the palc executable.
 #[derive(Parser, Debug)]
 struct Args {
@@ -15,7 +17,7 @@ fn main() -> Result<(), anyhow::Error> {
 
     let file = std::fs::read_to_string(args.input)?;
 
-    println!("{:?}", file);
+    let (entry_module, _) = dbg!(module().parse(&file)?);
 
     Ok(())
 }
