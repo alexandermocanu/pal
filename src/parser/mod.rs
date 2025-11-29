@@ -5,28 +5,35 @@ use std::{iter::once, sync::Arc};
 
 use error::ParseError;
 
+/// A generic parser for pal.
 #[derive(Clone)]
 pub struct Parser<T> {
     parser: Arc<dyn Fn(String) -> Result<(T, String), ParseError>>,
 }
 
 impl<T: 'static> Parser<T> {
+    /// Creates a new parser from a given function, which parses a given [`String`] and returns
+    /// either a result and the rest of the input, or a parsing error.
     pub fn new(parser: impl Fn(String) -> Result<(T, String), ParseError> + 'static) -> Parser<T> {
         Parser {
             parser: Arc::new(parser),
         }
     }
 
+    /// Makes the parser that is moved into the closure lazily evaulated, meaning it only gets
+    /// initialized when you attempt to parse.
     pub fn lazy(producer: impl Fn() -> Parser<T> + 'static) -> Parser<T> {
         Parser::new(move |input| producer().parse(input))
     }
 
     // Functor
+    /// Maps a [`Parser<T>`] to a [`Parser<O>`] with a function f such that `fn(T) -> O`.
     pub fn map<O: 'static>(self, f: impl Fn(T) -> O + 'static) -> Parser<O> {
         Parser::new(move |input| self.parse(input).map(|(result, input)| (f(result), input)))
     }
 
     // Applicative
+    /// Returns a [`Parser<T>`] that always returns `Ok((T, String))`.
     pub fn pure(value: T) -> Parser<T>
     where
         T: Clone,
@@ -34,6 +41,8 @@ impl<T: 'static> Parser<T> {
         Parser::new(move |input| Ok((value.clone(), input)))
     }
 
+    /// Chains two parsers together such that the return Parser expects [`Parser<O>`] to follow
+    /// [`Parser<T>`].
     pub fn chain<O: 'static>(self, other: Parser<O>) -> Parser<(T, O)> {
         Parser::new(move |input| {
             self.parse(input).and_then(|(result_a, input)| {
@@ -44,19 +53,28 @@ impl<T: 'static> Parser<T> {
         })
     }
 
+    /// Chains two [`Parser`]s together and drops the left result.
     pub fn left<O: 'static>(self, other: Parser<O>) -> Parser<T> {
         self.chain(other).map(|(result, _)| result)
     }
 
+    /// Chains two [`Parser`]s together and drops the right result.
     pub fn right<O: 'static>(self, other: Parser<O>) -> Parser<O> {
         self.chain(other).map(|(_, result)| result)
     }
 
     // Alternative
+    /// Returns a [`Parser<T>`] that always returns `Err(ParseError)`.
     pub fn empty(value: ParseError) -> Parser<T> {
         Parser::new(move |_| Err(value.clone()))
     }
 
+    /// Creates a [`Parser`] that attempts the given [`Parser`] when the calling [`Parser`] fails.
+    /// Errors are ordered and higher ordering variants are prioritized.
+    /// The choice is as follows:
+    /// ```rs
+    /// parse_error_a.max(parse_error_b)
+    /// ```
     pub fn or(self, other: Parser<T>) -> Parser<T> {
         Parser::new(move |input| {
             self.parse(input.clone()).or_else(|parse_error_a| {
@@ -67,6 +85,8 @@ impl<T: 'static> Parser<T> {
         })
     }
 
+    /// Creates a [`Parser`] that wraps a value in [`Option<T>`]. Returns `Some(T)` when the parser
+    /// succeeds, otherwise returns `None`.
     pub fn maybe(self) -> Parser<Option<T>>
     where
         T: Clone,
@@ -74,6 +94,7 @@ impl<T: 'static> Parser<T> {
         self.map(Some).or(Parser::pure(None))
     }
 
+    /// Creates a [`Parser`] that matches on zero or many possibilities.
     pub fn many(self) -> Parser<Vec<T>>
     where
         T: Clone,
@@ -84,6 +105,11 @@ impl<T: 'static> Parser<T> {
             .or(Parser::pure(vec![]))
     }
 
+    /// Creates a [`Parser`] that matches on one or many possibilities.
+    /// This is equivalent to the following (omitting clones):
+    /// ```rs
+    /// parser.chain(parser.many()).map(merge)
+    /// ```
     pub fn some(self) -> Parser<Vec<T>>
     where
         T: Clone,
@@ -93,6 +119,7 @@ impl<T: 'static> Parser<T> {
             .map(|(x, xs)| Some(x).into_iter().chain(xs.into_iter()).collect())
     }
 
+    /// Consumes a [`Parser`] with any type that implements [`ToString`] and returns the result.
     pub fn parse(&self, input: impl ToString) -> Result<(T, String), ParseError> {
         (self.parser)(input.to_string())
     }
