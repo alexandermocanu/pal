@@ -2,6 +2,7 @@
 #[derive(Clone, Debug)]
 pub enum Type {
     Atomic(String),
+    Pointer(Box<Type>),
 }
 
 /// Describes any possible expression, including left-recursive ones. There is no distinction in

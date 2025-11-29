@@ -1,4 +1,5 @@
 use inkwell::{
+    AddressSpace,
     builder::Builder,
     context::Context,
     module::Module as CodegenModule,
@@ -25,6 +26,9 @@ pub fn generate_codegen_type<'ctx>(
             "char" => Ok(context.i8_type().as_basic_type_enum()),
             _ => Err(CodegenError::TypeDoesNotExist.into()),
         },
+        Type::Pointer(_) => Ok(context
+            .ptr_type(AddressSpace::default())
+            .as_basic_type_enum()),
     }
 }
 

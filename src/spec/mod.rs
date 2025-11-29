@@ -7,8 +7,12 @@ pub fn atomic() -> Parser<Type> {
     identifier().map(Type::Atomic)
 }
 
+pub fn pointer() -> Parser<Type> {
+    symbol("*").right(typ()).map(Box::new).map(Type::Pointer)
+}
+
 pub fn typ() -> Parser<Type> {
-    atomic()
+    Parser::lazy(|| atomic().or(pointer()))
 }
 
 pub fn str_literal() -> Parser<Expression> {
