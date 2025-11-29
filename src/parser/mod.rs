@@ -58,7 +58,13 @@ impl<T: 'static> Parser<T> {
     }
 
     pub fn or(self, other: Parser<T>) -> Parser<T> {
-        Parser::new(move |input| self.parse(input.clone()).or_else(|_| other.parse(input)))
+        Parser::new(move |input| {
+            self.parse(input.clone()).or_else(|parse_error_a| {
+                other
+                    .parse(input)
+                    .map_err(|parse_error_b| parse_error_a.max(parse_error_b))
+            })
+        })
     }
 
     pub fn maybe(self) -> Parser<Option<T>>
@@ -108,10 +114,7 @@ fn applicative_is_pure() {
 #[test]
 fn applicatives_can_chain() {
     let p1: Parser<()> = Parser::pure(());
-    let p2: Parser<()> = Parser::empty(ParseError::CharacterMismatch {
-        expected: vec![],
-        found: None,
-    });
+    let p2: Parser<()> = Parser::empty(ParseError::Unit);
 
     assert_eq!(
         p1.clone().chain(p1.clone()).parse(""),
@@ -120,18 +123,12 @@ fn applicatives_can_chain() {
 
     assert_eq!(
         p1.clone().chain(p2.clone()).parse(""),
-        Err(ParseError::CharacterMismatch {
-            expected: vec![],
-            found: None
-        })
+        Err(ParseError::Unit)
     );
 
     assert_eq!(
         p2.clone().chain(p1.clone()).parse(""),
-        Err(ParseError::CharacterMismatch {
-            expected: vec![],
-            found: None
-        })
+        Err(ParseError::Unit)
     );
 }
 
@@ -152,15 +149,8 @@ fn applicatives_can_chain_left_and_right() {
 #[test]
 fn alternative_is_empty() {
     assert_eq!(
-        Parser::<()>::empty(ParseError::CharacterMismatch {
-            expected: vec![],
-            found: None
-        })
-        .parse("".to_string()),
-        Err(ParseError::CharacterMismatch {
-            expected: vec![],
-            found: None
-        })
+        Parser::<()>::empty(ParseError::Unit).parse("".to_string()),
+        Err(ParseError::Unit)
     );
 }
 
@@ -172,12 +162,7 @@ fn alternative_maybe_exists() {
     );
 
     assert_eq!(
-        Parser::<()>::empty(ParseError::CharacterMismatch {
-            expected: vec![],
-            found: None
-        })
-        .maybe()
-        .parse(""),
+        Parser::<()>::empty(ParseError::Unit).maybe().parse(""),
         Ok((None, "".to_string()))
     );
 }
@@ -189,7 +174,7 @@ fn alternative_many() {
         match chars.next() {
             Some('a') => Ok(('a', chars.collect())),
             found => Err(ParseError::CharacterMismatch {
-                expected: vec!['a'],
+                expected: Some('a'),
                 found,
             }),
         }
@@ -213,7 +198,7 @@ fn alternative_some() {
         match chars.next() {
             Some('a') => Ok(('a', chars.collect())),
             found => Err(ParseError::CharacterMismatch {
-                expected: vec!['a'],
+                expected: Some('a'),
                 found,
             }),
         }
@@ -227,7 +212,7 @@ fn alternative_some() {
     assert_eq!(
         char_a.clone().some().parse("bbbb"),
         Err(ParseError::CharacterMismatch {
-            expected: vec!['a'],
+            expected: Some('a'),
             found: Some('b')
         })
     );
