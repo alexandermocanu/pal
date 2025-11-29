@@ -1,6 +1,13 @@
 ext fn printf(ptr: *char) -> u32;
 
-fn main() -> u32 {
-    printf("Hello");
+fn caller() -> u32 {
+    printf("called");
     return 1;
+};
+
+fn main() -> u32 {
+    caller();
+    printf("Hi");
+    caller();
+    return 123;
 };
