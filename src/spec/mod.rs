@@ -35,6 +35,6 @@ pub fn item() -> Parser<Item> {
     function_declaration()
 }
 
-pub fn module() -> Parser<Module> {
-    item().many().map(Module)
+pub fn module(name: String) -> Parser<Module> {
+    item().many().map(move |items| Module(name.clone(), items))
 }

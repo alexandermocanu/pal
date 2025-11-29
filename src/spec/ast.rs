@@ -20,4 +20,4 @@ pub enum Item {
 
 /// Describes an individual code module.
 #[derive(Clone, Debug)]
-pub struct Module(pub Vec<Item>);
+pub struct Module(pub String, pub Vec<Item>);
