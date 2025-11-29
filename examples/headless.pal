@@ -1,6 +1,3 @@
-ext fn printf(ptr: *char) -> u32;
-
 fn main() -> u32 {
-    printf("Headless");
     return 123;
 };
