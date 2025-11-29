@@ -1,0 +1,8 @@
+// A comment to describe that this printf implemenation does not specify varargs/variadics!
+// You cannot use printf formatting from within pal as of currently, and pal has no stdlib.
+extern printf(ptr: *char) -> i32;
+
+fn main() -> i32 {
+    printf("Hello, world!");
+    return 1;
+}
