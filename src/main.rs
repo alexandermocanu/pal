@@ -18,10 +18,15 @@ fn main() -> Result<(), anyhow::Error> {
     let args = Args::parse();
 
     let file = std::fs::read_to_string(args.input)?;
-    let (entry_module, _) = module("main".to_string()).parse(&file)?;
+    let (entry_module, remaining) = module("main".to_string()).parse(&file)?;
+
+    println!("Parsed: {:?}", entry_module);
+    println!("Remaining: {:?}", remaining);
 
     let codegen_context = Context::create();
     let codegen_module = generate_codegen_module(&codegen_context, &entry_module)?;
+
+    codegen_module.verify().unwrap();
 
     codegen_module.write_bitcode_to_path("bitcode.ll");
 

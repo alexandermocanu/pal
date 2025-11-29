@@ -38,20 +38,44 @@ pub fn statement() -> Parser<Statement> {
     ret().left(symbol(";"))
 }
 
+pub fn argument_parser() -> Parser<Vec<(String, Type)>> {
+    let argument = identifier().left(symbol(":")).chain(typ());
+
+    argument
+        .clone()
+        .maybe()
+        .chain(symbol(",").right(argument).many())
+        .left(symbol(",").maybe())
+        .map(|(head, rest)| head.into_iter().chain(rest.into_iter()).collect())
+}
+
+pub fn extern_function_definition() -> Parser<Item> {
+    symbol("ext")
+        .chain(symbol("fn"))
+        .right(identifier())
+        .chain(between(symbol("("), argument_parser(), symbol(")")))
+        .left(symbol("->"))
+        .chain(typ())
+        .map(|((a, b), c)| Item::ExternFunctionDefinition(a, b, c))
+}
+
 pub fn function_declaration() -> Parser<Item> {
     symbol("fn")
         .right(identifier())
-        .left(symbol("()"))
+        .chain(between(symbol("("), argument_parser(), symbol(")")))
         .left(symbol("->"))
         .chain(typ())
         .chain(between(symbol("{"), statement().many(), symbol("}")))
-        .map(|((a, b), c)| Item::FunctionDeclaration(a, b, c))
+        .map(|(((a, b), c), d)| Item::FunctionDeclaration(a, b, c, d))
 }
 
 pub fn item() -> Parser<Item> {
-    function_declaration()
+    extern_function_definition().or(function_declaration())
 }
 
 pub fn module(name: String) -> Parser<Module> {
-    item().many().map(move |items| Module(name.clone(), items))
+    item()
+        .left(symbol(";"))
+        .many()
+        .map(move |items| Module(name.clone(), items))
 }

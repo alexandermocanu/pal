@@ -1,3 +1,5 @@
-fn main() -> *&^char {
+ext fn printf(ptr: char) -> u32;
+
+fn main() -> u32 {
     return 123;
-}
+};

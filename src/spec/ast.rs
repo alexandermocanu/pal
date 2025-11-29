@@ -22,7 +22,8 @@ pub enum Statement {
 /// such as a function declaration or an extern function definition.
 #[derive(Clone, Debug)]
 pub enum Item {
-    FunctionDeclaration(String, Type, Vec<Statement>),
+    ExternFunctionDefinition(String, Vec<(String, Type)>, Type),
+    FunctionDeclaration(String, Vec<(String, Type)>, Type, Vec<Statement>),
 }
 
 /// Describes an individual code module.

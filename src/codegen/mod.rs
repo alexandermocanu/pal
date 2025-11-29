@@ -66,10 +66,27 @@ pub fn generate_codegen_item<'a>(
     item: &Item,
 ) -> anyhow::Result<()> {
     match item {
-        Item::FunctionDeclaration(name, typ, body) => {
+        Item::ExternFunctionDefinition(name, args, typ) => {
+            let argument_types: Vec<_> = args
+                .iter()
+                .map(|(_, typ)| generate_codegen_type(context, typ).unwrap().into())
+                .collect();
+
+            module.add_function(
+                name,
+                generate_codegen_type(context, typ)?.fn_type(&argument_types, false),
+                None,
+            );
+        }
+        Item::FunctionDeclaration(name, args, typ, body) => {
+            let argument_types: Vec<_> = args
+                .iter()
+                .map(|(_, typ)| generate_codegen_type(context, typ).unwrap().into())
+                .collect();
+
             let fn_decl = module.add_function(
                 &name,
-                generate_codegen_type(context, typ)?.fn_type(&[], false),
+                generate_codegen_type(context, typ)?.fn_type(&argument_types, false),
                 None,
             );
             let fn_block = context.append_basic_block(fn_decl, &name);
