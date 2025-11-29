@@ -45,7 +45,7 @@ pub fn generate_codegen_expression<'ctx>(
     }
 }
 
-/// Generates LLVM Instruction Values via the [`Builder`] depending on the type of statement
+/// Generates LLVM instruction values via the [`Builder`] depending on the type of statement
 /// parsed.
 pub fn generate_codegen_statement(
     context: &Context,

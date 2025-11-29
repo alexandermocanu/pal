@@ -1,6 +1,6 @@
 ext fn printf(ptr: *char) -> u32;
 
 fn main() -> u32 {
-    printf("Hello");
-    return 1;
+    printf("ballsak");
+    return 123;
 };
