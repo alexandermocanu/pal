@@ -3,6 +3,14 @@ pub mod ast;
 use crate::parser::*;
 use ast::*;
 
+pub fn atomic() -> Parser<Type> {
+    identifier().map(Type::Atomic)
+}
+
+pub fn typ() -> Parser<Type> {
+    atomic()
+}
+
 pub fn str_literal() -> Parser<Expression> {
     between(
         symbol("\""),
@@ -22,12 +30,12 @@ pub fn expression() -> Parser<Expression> {
     str_literal().or(num_literal())
 }
 
-pub fn r#return() -> Parser<Statement> {
+pub fn ret() -> Parser<Statement> {
     symbol("return").right(expression()).map(Statement::Return)
 }
 
 pub fn statement() -> Parser<Statement> {
-    r#return().left(symbol(";"))
+    ret().left(symbol(";"))
 }
 
 pub fn function_declaration() -> Parser<Item> {
@@ -35,9 +43,9 @@ pub fn function_declaration() -> Parser<Item> {
         .right(identifier())
         .left(symbol("()"))
         .left(symbol("->"))
-        .left(identifier())
+        .chain(typ())
         .chain(between(symbol("{"), statement().many(), symbol("}")))
-        .map(|(a, b)| Item::FunctionDeclaration(a, b))
+        .map(|((a, b), c)| Item::FunctionDeclaration(a, b, c))
 }
 
 pub fn item() -> Parser<Item> {

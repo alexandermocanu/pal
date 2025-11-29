@@ -2,10 +2,31 @@ use inkwell::{
     builder::Builder,
     context::Context,
     module::Module as CodegenModule,
+    types::{BasicType, BasicTypeEnum},
     values::{BasicValue, BasicValueEnum},
 };
+use thiserror::Error;
 
 use crate::spec::ast::*;
+
+#[derive(Error, Debug)]
+pub enum CodegenError {
+    #[error("tried to reference a type that does not exist.")]
+    TypeDoesNotExist,
+}
+
+pub fn generate_codegen_type<'ctx>(
+    context: &'ctx Context,
+    typ: &Type,
+) -> anyhow::Result<BasicTypeEnum<'ctx>> {
+    match typ {
+        Type::Atomic(ident) => match &ident[..] {
+            "u32" => Ok(context.i32_type().as_basic_type_enum()),
+            "char" => Ok(context.i8_type().as_basic_type_enum()),
+            _ => Err(CodegenError::TypeDoesNotExist.into()),
+        },
+    }
+}
 
 pub fn generate_codegen_expression<'ctx>(
     context: &'ctx Context,
@@ -45,8 +66,12 @@ pub fn generate_codegen_item<'a>(
     item: &Item,
 ) -> anyhow::Result<()> {
     match item {
-        Item::FunctionDeclaration(name, body) => {
-            let fn_decl = module.add_function(&name, context.i32_type().fn_type(&[], false), None);
+        Item::FunctionDeclaration(name, typ, body) => {
+            let fn_decl = module.add_function(
+                &name,
+                generate_codegen_type(context, typ)?.fn_type(&[], false),
+                None,
+            );
             let fn_block = context.append_basic_block(fn_decl, &name);
 
             let builder = context.create_builder();

@@ -1,3 +1,9 @@
+/// Describes any possible type expression.
+#[derive(Clone, Debug)]
+pub enum Type {
+    Atomic(String),
+}
+
 /// Describes any possible expression, including left-recursive ones. There is no distinction in
 /// the AST.
 #[derive(Clone, Debug)]
@@ -16,7 +22,7 @@ pub enum Statement {
 /// such as a function declaration or an extern function definition.
 #[derive(Clone, Debug)]
 pub enum Item {
-    FunctionDeclaration(String, Vec<Statement>),
+    FunctionDeclaration(String, Type, Vec<Statement>),
 }
 
 /// Describes an individual code module.
